@@ -2,7 +2,7 @@
     "name": "深圳天气实景监测",
     "short_name": "深圳天气",
     "description": "深圳市气象局实景监测视频",
-    "start_url": "/",
+    "start_url": "/sz-weather",
     "display": "fullscreen",
     "orientation": "any",
     "background_color": "#050a14",
