@@ -30,7 +30,6 @@ const state = {
     currentCameraIndex: 0,
     currentVideoTime: null,
     isPlaying: true,
-    isMuted: true,
     refreshInterval: null,
     autoRefreshMs: 20000 // 20秒检查一次
 };
@@ -46,12 +45,8 @@ const elements = {
     errorOverlay: document.getElementById('errorOverlay'),
     retryBtn: document.getElementById('retryBtn'),
     playPauseBtn: document.getElementById('playPauseBtn'),
-    muteBtn: document.getElementById('muteBtn'),
     fullscreenBtn: document.getElementById('fullscreenBtn'),
-    timestampBadge: document.getElementById('timestampBadge'),
-    timestampValue: document.getElementById('timestampValue'),
-    tabsTrack: document.getElementById('tabsTrack'),
-    indicatorLine: document.getElementById('indicatorLine')
+    tabsTrack: document.getElementById('tabsTrack')
 };
 
 // ================================
@@ -178,7 +173,6 @@ function tryLoadVideo(timestamp) {
     // 更新界面
     elements.cameraName.textContent = camera.name;
     elements.updateTime.textContent = formatDisplayTime(state.currentVideoTime);
-    elements.timestampValue.textContent = formatDisplayTime(state.currentVideoTime);
 
     // 设置视频源
     elements.videoPlayer.src = videoUrl;
@@ -252,25 +246,6 @@ function togglePlayPause() {
 }
 
 /**
- * 切换静音
- */
-function toggleMute() {
-    state.isMuted = !state.isMuted;
-    elements.videoPlayer.muted = state.isMuted;
-
-    const volumeIcon = elements.muteBtn.querySelector('.icon-volume-up');
-    const mutedIcon = elements.muteBtn.querySelector('.icon-muted');
-
-    if (state.isMuted) {
-        volumeIcon.classList.add('hidden');
-        mutedIcon.classList.remove('hidden');
-    } else {
-        volumeIcon.classList.remove('hidden');
-        mutedIcon.classList.add('hidden');
-    }
-}
-
-/**
  * 切换全屏
  */
 function toggleFullscreen() {
@@ -316,8 +291,6 @@ function initCameraTabs() {
         tab.addEventListener('click', () => switchCamera(index));
         elements.tabsTrack.appendChild(tab);
     });
-
-    updateTabIndicator();
 }
 
 /**
@@ -334,29 +307,8 @@ function switchCamera(index) {
         tab.classList.toggle('active', i === index);
     });
 
-    updateTabIndicator();
-
     // 加载新视频
     loadVideo();
-}
-
-/**
- * 更新 Tab 指示器位置
- */
-function updateTabIndicator() {
-    const tabs = elements.tabsTrack.querySelectorAll('.camera-tab');
-    const activeTab = tabs[state.currentCameraIndex];
-
-    if (activeTab) {
-        const trackRect = elements.tabsTrack.getBoundingClientRect();
-        const tabRect = activeTab.getBoundingClientRect();
-
-        const offsetLeft = tabRect.left - trackRect.left;
-        const width = tabRect.width;
-
-        elements.indicatorLine.style.left = `${offsetLeft}px`;
-        elements.indicatorLine.style.width = `${width}px`;
-    }
 }
 
 // ================================
@@ -440,7 +392,6 @@ function initEventListeners() {
 
     // 控件事件
     elements.playPauseBtn.addEventListener('click', togglePlayPause);
-    elements.muteBtn.addEventListener('click', toggleMute);
     elements.fullscreenBtn.addEventListener('click', toggleFullscreen);
     elements.retryBtn.addEventListener('click', loadVideo);
 
@@ -454,12 +405,6 @@ function initEventListeners() {
             }
         }
     });
-
-    // 窗口大小变化时更新指示器
-    window.addEventListener('resize', updateTabIndicator);
-
-    // 首次加载后更新指示器
-    setTimeout(updateTabIndicator, 100);
 }
 
 // ================================
@@ -484,9 +429,6 @@ function init() {
 
     // 启动自动刷新
     startAutoRefresh();
-
-    // 设置静音状态
-    elements.videoPlayer.muted = true;
 
     console.log('[App] Ready!');
 }
