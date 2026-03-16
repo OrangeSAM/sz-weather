@@ -2,7 +2,14 @@
   "permissions": {
     "allow": [
       "Bash(npx serve:*)",
-      "Bash(git init:*)"
+      "Bash(git init:*)",
+      "Bash(git commit:*)",
+      "Bash(git add:*)",
+      "Bash(git remote:*)",
+      "Bash(ssh-keygen:*)",
+      "WebFetch(domain:minimax-algeng-chat-tts.oss-cn-wulanchabu.aliyuncs.com)",
+      "Bash(git checkout:*)",
+      "Bash(git push:*)"
     ]
   }
 }
