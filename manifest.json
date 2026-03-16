@@ -1,0 +1,31 @@
+{
+    "name": "深圳天气实景监测",
+    "short_name": "深圳天气",
+    "description": "深圳市气象局实景监测视频",
+    "start_url": "/",
+    "display": "fullscreen",
+    "orientation": "any",
+    "background_color": "#050a14",
+    "theme_color": "#0a1428",
+    "categories": ["weather", "utilities", "navigation"],
+    "lang": "zh-CN",
+    "scope": "/",
+    "icons": [
+        {
+            "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%230a1428' width='192' height='192' rx='32'/><path fill='%2300d4ff' d='M96 32c-35.3 0-64 28.7-64 64s28.7 64 64 64 64-28.7 64-64-28.7-64-64-64zm0 112c-26.5 0-48-21.5-48-48s21.5-48 48-48 48 21.5 48 48-21.5 48-48 48z'/><circle fill='%2300d4ff' cx='96' cy='96' r='16'/><path fill='%2300d4ff' d='M140 32l-12 12M140 160l-12-12M52 32l12 12M52 160l12-12' stroke='%2300d4ff' stroke-width='4' stroke-linecap='round'/></svg>",
+            "sizes": "192x192",
+            "type": "image/svg+xml",
+            "purpose": "any"
+        },
+        {
+            "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect fill='%230a1428' width='512' height='512' rx='64'/><path fill='%2300d4ff' d='M256 64c-106 0-192 86-192 192s86 192 192 192 192-86 192-192S362 64 256 64zm0 320c-70.7 0-128-57.3-128-128s57.3-128 128-128 128 57.3 128 128-57.3 128-128 128z'/><circle fill='%2300d4ff' cx='256' cy='256' r='40'/><path fill='%2300d4ff' d='M384 64l-32 32M384 416l-32-32M128 64l32 32M128 416l32-32' stroke='%2300d4ff' stroke-width='12' stroke-linecap='round'/></svg>",
+            "sizes": "512x512",
+            "type": "image/svg+xml",
+            "purpose": "any"
+        }
+    ],
+    "screenshots": [],
+    "shortcuts": [],
+    "related_applications": [],
+    "prefer_related_applications": false
+}
