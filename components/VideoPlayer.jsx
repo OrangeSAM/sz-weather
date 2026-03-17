@@ -21,7 +21,13 @@ export default function VideoPlayer({ currentCameraIndex, onTimeUpdate }) {
     const retryCountRef = useRef(0);
     const currentUrlRef = useRef(null); // 追踪当前正在加载的 URL
     const isRetryingRef = useRef(false); // 标记是否正在重试
+    const onTimeUpdateRef = useRef(onTimeUpdate); // 用 ref 保存，避免触发 useEffect
     const MAX_RETRIES = 2;
+
+    // 保持 ref 最新
+    useEffect(() => {
+        onTimeUpdateRef.current = onTimeUpdate;
+    }, [onTimeUpdate]);
 
     // 加载视频
     const loadVideo = useCallback((timestamp, isRetry = false) => {
@@ -38,15 +44,15 @@ export default function VideoPlayer({ currentCameraIndex, onTimeUpdate }) {
         setCurrentVideoTime(timestamp);
         isRetryingRef.current = isRetry;
 
-        if (onTimeUpdate) {
-            onTimeUpdate(formatDisplayTime(timestamp));
+        if (onTimeUpdateRef.current) {
+            onTimeUpdateRef.current(formatDisplayTime(timestamp));
         }
 
         if (videoRef.current) {
             videoRef.current.src = videoUrl;
             videoRef.current.load();
         }
-    }, [currentCameraIndex, onTimeUpdate]);
+    }, [currentCameraIndex]);
 
     // 初始化或切换摄像头时加载视频
     useEffect(() => {
