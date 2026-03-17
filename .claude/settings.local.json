@@ -9,7 +9,15 @@
       "Bash(ssh-keygen:*)",
       "WebFetch(domain:minimax-algeng-chat-tts.oss-cn-wulanchabu.aliyuncs.com)",
       "Bash(git checkout:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(lsof:*)",
+      "Read(//Users/liuyibi/Desktop/claude-playground/**)",
+      "Bash(npx create-next-app@latest sz-weather-next --js --no-tailwind --eslint --app --src-dir=false --import-alias=\"@/*\" --use-npm)",
+      "Bash(cd:*)",
+      "Bash(mkdir:*)",
+      "Bash(npm run:*)",
+      "Bash(sleep:*)",
+      "Bash(ls:*)"
     ]
   }
 }
