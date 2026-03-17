@@ -85,7 +85,11 @@ export default function VideoPlayer({ currentCameraIndex, onTimeUpdate }) {
             retryCountRef.current++;
             const camera = CAMERAS[currentCameraIndex];
             const timeSuffix = camera.timeSuffix || 19;
-            const prevTimestamp = getPreviousTimestamp(currentVideoTime, timeSuffix);
+
+            // 如果 currentVideoTime 为空（首次加载失败），重新获取当前时间
+            const timestamp = currentVideoTime || getVideoTimestamp(timeSuffix);
+            const prevTimestamp = getPreviousTimestamp(timestamp, timeSuffix);
+
             console.log(`[Video] Retrying with previous timestamp:`, prevTimestamp);
             loadVideo(prevTimestamp);
         } else {
