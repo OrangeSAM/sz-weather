@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Header from '@/components/Header';
 import VideoPlayer from '@/components/VideoPlayer';
-import CameraTabs from '@/components/CameraTabs';
+import CameraMap from '@/components/CameraMap';
 import { CAMERAS } from '@/lib/cameras';
 
 export default function Home() {
@@ -33,7 +33,7 @@ export default function Home() {
                 currentCameraIndex={currentCameraIndex}
                 onTimeUpdate={handleTimeUpdate}
             />
-            <CameraTabs
+            <CameraMap
                 currentCameraIndex={currentCameraIndex}
                 onCameraSelect={handleCameraSelect}
             />
