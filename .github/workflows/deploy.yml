@@ -4,7 +4,6 @@ on:
   push:
     branches: [main]
 
-# 设置页面写入权限
 permissions:
   contents: read
   pages: write
@@ -31,6 +30,9 @@ jobs:
 
       - name: Build
         run: npm run build
+
+      - name: Copy manifest
+        run: cp public/manifest.json out/
 
       - name: Setup Pages
         uses: actions/configure-pages@v4

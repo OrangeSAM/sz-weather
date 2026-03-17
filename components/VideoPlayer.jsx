@@ -6,7 +6,8 @@ import {
     getVideoTimestamp,
     getPreviousTimestamp,
     getVideoUrl,
-    formatDisplayTime
+    formatDisplayTime,
+    formatVideoTimestamp
 } from '@/lib/cameras';
 
 /**
