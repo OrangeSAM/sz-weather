@@ -26,6 +26,7 @@ export default function VideoPlayer({ currentCameraIndex, onTimeUpdate }) {
         const camera = CAMERAS[currentCameraIndex];
         const videoUrl = getVideoUrl(camera, timestamp);
 
+        // 重置重试计数（只有手动调用 loadVideo 时才重置，handleError 中不回退时不要重置）
         console.log(`[Video] Loading: ${camera.name} - ${videoUrl} (retry: ${retryCountRef.current})`);
 
         setIsLoading(true);
@@ -54,6 +55,11 @@ export default function VideoPlayer({ currentCameraIndex, onTimeUpdate }) {
     // 定时检查新视频
     useEffect(() => {
         const interval = setInterval(() => {
+            // 如果正在加载或已经出错，不检查新视频
+            if (isLoading || hasError) {
+                return;
+            }
+
             const camera = CAMERAS[currentCameraIndex];
             const timeSuffix = camera.timeSuffix || 19;
             const newTimestamp = getVideoTimestamp(timeSuffix);
@@ -66,7 +72,7 @@ export default function VideoPlayer({ currentCameraIndex, onTimeUpdate }) {
         }, 20000);
 
         return () => clearInterval(interval);
-    }, [currentCameraIndex, currentVideoTime, loadVideo]);
+    }, [currentCameraIndex, currentVideoTime, loadVideo, isLoading, hasError]);
 
     // 视频事件处理
     const handleCanPlay = () => {
