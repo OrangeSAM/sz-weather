@@ -19,19 +19,24 @@ export default function VideoPlayer({ currentCameraIndex, onTimeUpdate }) {
     const [hasError, setHasError] = useState(false);
     const [currentVideoTime, setCurrentVideoTime] = useState(null);
     const retryCountRef = useRef(0);
+    const currentUrlRef = useRef(null); // 追踪当前正在加载的 URL
+    const isRetryingRef = useRef(false); // 标记是否正在重试
     const MAX_RETRIES = 2;
 
     // 加载视频
-    const loadVideo = useCallback((timestamp) => {
+    const loadVideo = useCallback((timestamp, isRetry = false) => {
         const camera = CAMERAS[currentCameraIndex];
         const videoUrl = getVideoUrl(camera, timestamp);
 
-        // 重置重试计数（只有手动调用 loadVideo 时才重置，handleError 中不回退时不要重置）
+        // 记录当前正在加载的 URL
+        currentUrlRef.current = videoUrl;
+
         console.log(`[Video] Loading: ${camera.name} - ${videoUrl} (retry: ${retryCountRef.current})`);
 
         setIsLoading(true);
         setHasError(false);
         setCurrentVideoTime(timestamp);
+        isRetryingRef.current = isRetry;
 
         if (onTimeUpdate) {
             onTimeUpdate(formatDisplayTime(timestamp));
@@ -55,8 +60,8 @@ export default function VideoPlayer({ currentCameraIndex, onTimeUpdate }) {
     // 定时检查新视频
     useEffect(() => {
         const interval = setInterval(() => {
-            // 如果正在加载或已经出错，不检查新视频
-            if (isLoading || hasError) {
+            // 如果正在加载、已经出错或正在重试，不检查新视频
+            if (isLoading || hasError || isRetryingRef.current) {
                 return;
             }
 
@@ -76,6 +81,7 @@ export default function VideoPlayer({ currentCameraIndex, onTimeUpdate }) {
 
     // 视频事件处理
     const handleCanPlay = () => {
+        isRetryingRef.current = false;
         setIsLoading(false);
         setHasError(false);
         if (videoRef.current) {
@@ -86,6 +92,15 @@ export default function VideoPlayer({ currentCameraIndex, onTimeUpdate }) {
     };
 
     const handleError = () => {
+        // 检查是否是当前 URL 的错误（忽略被 cancel 的请求）
+        const currentUrl = currentUrlRef.current;
+        const videoSrc = videoRef.current?.src || '';
+
+        if (!videoSrc.includes(currentUrl?.split('/').pop())) {
+            console.log('[Video] Ignoring canceled/aborted request');
+            return;
+        }
+
         console.error('[Video] Error, retryCount:', retryCountRef.current);
 
         if (retryCountRef.current < MAX_RETRIES) {
@@ -98,7 +113,7 @@ export default function VideoPlayer({ currentCameraIndex, onTimeUpdate }) {
             const prevTimestamp = getPreviousTimestamp(timestamp, timeSuffix);
 
             console.log(`[Video] Retrying with previous timestamp:`, prevTimestamp, 'format:', formatVideoTimestamp(prevTimestamp));
-            loadVideo(prevTimestamp);
+            loadVideo(prevTimestamp, true);
         } else {
             console.log('[Video] Max retries reached, showing error');
             setIsLoading(false);
