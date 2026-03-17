@@ -44,7 +44,6 @@ const elements = {
     loadingOverlay: document.getElementById('loadingOverlay'),
     errorOverlay: document.getElementById('errorOverlay'),
     retryBtn: document.getElementById('retryBtn'),
-    playPauseBtn: document.getElementById('playPauseBtn'),
     fullscreenBtn: document.getElementById('fullscreenBtn'),
     tabsTrack: document.getElementById('tabsTrack')
 };
@@ -226,26 +225,6 @@ function onVideoError(error) {
 }
 
 /**
- * 切换播放/暂停
- */
-function togglePlayPause() {
-    state.isPlaying = !state.isPlaying;
-
-    const playIcon = elements.playPauseBtn.querySelector('.icon-play');
-    const pauseIcon = elements.playPauseBtn.querySelector('.icon-pause');
-
-    if (state.isPlaying) {
-        elements.videoPlayer.play();
-        playIcon.classList.add('hidden');
-        pauseIcon.classList.remove('hidden');
-    } else {
-        elements.videoPlayer.pause();
-        playIcon.classList.remove('hidden');
-        pauseIcon.classList.add('hidden');
-    }
-}
-
-/**
  * 切换全屏
  */
 function toggleFullscreen() {
@@ -391,7 +370,6 @@ function initEventListeners() {
     });
 
     // 控件事件
-    elements.playPauseBtn.addEventListener('click', togglePlayPause);
     elements.fullscreenBtn.addEventListener('click', toggleFullscreen);
     elements.retryBtn.addEventListener('click', loadVideo);
 
