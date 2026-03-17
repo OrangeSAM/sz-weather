@@ -13,21 +13,33 @@ import {
 /**
  * VideoPlayer 组件 - 视频播放器
  */
-export default function VideoPlayer({ currentCameraIndex, onTimeUpdate }) {
+export default function VideoPlayer({ currentCameraIndex, onTimeUpdate, selectedTimestamp, onPlaybackComplete, onBackToLive }) {
     const videoRef = useRef(null);
     const [isLoading, setIsLoading] = useState(true);
     const [hasError, setHasError] = useState(false);
     const [currentVideoTime, setCurrentVideoTime] = useState(null);
+    const [isPlayingHistory, setIsPlayingHistory] = useState(false);
     const retryCountRef = useRef(0);
     const currentUrlRef = useRef(null); // 追踪当前正在加载的 URL
     const isRetryingRef = useRef(false); // 标记是否正在重试
     const onTimeUpdateRef = useRef(onTimeUpdate); // 用 ref 保存，避免触发 useEffect
     const MAX_RETRIES = 2;
+    const selectedTimestampRef = useRef(null); // 记录选中的历史时间
 
     // 保持 ref 最新
     useEffect(() => {
         onTimeUpdateRef.current = onTimeUpdate;
     }, [onTimeUpdate]);
+
+    // 切换到历史模式
+    useEffect(() => {
+        if (selectedTimestamp) {
+            selectedTimestampRef.current = selectedTimestamp;
+            setIsPlayingHistory(true);
+            retryCountRef.current = 0;
+            loadVideo(selectedTimestamp);
+        }
+    }, [selectedTimestamp]);
 
     // 加载视频
     const loadVideo = useCallback((timestamp, isRetry = false) => {
@@ -65,6 +77,11 @@ export default function VideoPlayer({ currentCameraIndex, onTimeUpdate }) {
 
     // 定时检查新视频
     useEffect(() => {
+        // 如果正在播放历史视频，不自动刷新
+        if (isPlayingHistory) {
+            return;
+        }
+
         const interval = setInterval(() => {
             // 如果正在加载、已经出错或正在重试，不检查新视频
             if (isLoading || hasError || isRetryingRef.current) {
@@ -83,7 +100,7 @@ export default function VideoPlayer({ currentCameraIndex, onTimeUpdate }) {
         }, 20000);
 
         return () => clearInterval(interval);
-    }, [currentCameraIndex, currentVideoTime, loadVideo, isLoading, hasError]);
+    }, [currentCameraIndex, currentVideoTime, loadVideo, isLoading, hasError, isPlayingHistory]);
 
     // 视频事件处理
     const handleCanPlay = () => {
@@ -130,6 +147,52 @@ export default function VideoPlayer({ currentCameraIndex, onTimeUpdate }) {
     const handleLoadedData = () => {
         setIsLoading(false);
     };
+
+    // 视频播放完毕，自动播放下一个时间点
+    const handleEnded = () => {
+        if (!isPlayingHistory) return;
+
+        const currentTime = selectedTimestampRef.current;
+        if (!currentTime) return;
+
+        const camera = CAMERAS[currentCameraIndex];
+        const timeSuffix = camera.timeSuffix || 19;
+
+        // 获取上一个时间点
+        const prevTimestamp = getPreviousTimestamp(currentTime, timeSuffix);
+
+        // 检查是否已经播放到最早的时间点（24小时前）
+        const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+        if (prevTimestamp.getTime() < oneDayAgo.getTime()) {
+            console.log('[Playback] Reached earliest available timestamp');
+            return;
+        }
+
+        console.log('[Playback] Playing next timestamp:', prevTimestamp);
+        selectedTimestampRef.current = prevTimestamp;
+        loadVideo(prevTimestamp);
+
+        // 通知父组件
+        if (onPlaybackComplete) {
+            onPlaybackComplete(prevTimestamp);
+        }
+    };
+
+    // 返回直播模式
+    const handleBackToLive = useCallback(() => {
+        setIsPlayingHistory(false);
+        selectedTimestampRef.current = null;
+        retryCountRef.current = 0;
+
+        const camera = CAMERAS[currentCameraIndex];
+        const timeSuffix = camera.timeSuffix || 19;
+        const timestamp = getVideoTimestamp(timeSuffix);
+        loadVideo(timestamp);
+
+        if (onBackToLive) {
+            onBackToLive();
+        }
+    }, [currentCameraIndex, loadVideo, onBackToLive]);
 
     // 页面可见性变化时暂停/恢复
     useEffect(() => {
@@ -179,12 +242,13 @@ export default function VideoPlayer({ currentCameraIndex, onTimeUpdate }) {
                     ref={videoRef}
                     autoPlay
                     playsInline
-                    loop
+                    loop={!isPlayingHistory}
                     muted
                     preload="auto"
                     onCanPlay={handleCanPlay}
                     onError={handleError}
                     onLoadedData={handleLoadedData}
+                    onEnded={handleEnded}
                 >
                     您的浏览器不支持 video 标签
                 </video>

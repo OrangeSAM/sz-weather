@@ -429,6 +429,159 @@ body {
 }
 
 /* ================================
+   Video Timeline
+   ================================ */
+.timeline-container {
+    position: relative;
+    z-index: 100;
+    background: var(--bg-secondary);
+    border-top: 1px solid var(--border-subtle);
+    padding: var(--space-md) var(--space-lg);
+}
+
+.timeline-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-sm);
+}
+
+.timeline-title {
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.timeline-current {
+    font-size: 14px;
+    color: var(--accent-primary);
+    font-family: var(--font-mono);
+    font-weight: 500;
+}
+
+.timeline-track {
+    position: relative;
+    height: 48px;
+    background: var(--bg-tertiary);
+    border-radius: 8px;
+    cursor: pointer;
+    overflow: visible;
+    touch-action: none;
+    border: 1px solid var(--border-subtle);
+}
+
+.timeline-track:active {
+    border-color: var(--accent-primary);
+}
+
+.timeline-progress {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    background: linear-gradient(90deg, rgba(0, 212, 255, 0.2) 0%, rgba(0, 212, 255, 0.4) 100%);
+    border-radius: 7px 0 0 7px;
+    pointer-events: none;
+    transition: width 0.15s ease-out;
+}
+
+.timeline-ticks {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+}
+
+.hour-mark {
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 9px;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+}
+
+.timeline-handle {
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 24px;
+    height: 24px;
+    background: var(--accent-primary);
+    border-radius: 50%;
+    box-shadow: 0 0 12px var(--accent-glow);
+    pointer-events: none;
+    transition: left 0.15s ease-out;
+    z-index: 10;
+}
+
+.handle-inner {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 8px;
+    height: 8px;
+    background: #fff;
+    border-radius: 50%;
+}
+
+.timeline-footer {
+    display: flex;
+    justify-content: center;
+    margin-top: var(--space-sm);
+}
+
+.live-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 16px;
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-family: var(--font-display);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.live-btn:hover {
+    background: rgba(0, 0, 0, 0.6);
+    color: var(--text-primary);
+}
+
+.live-btn.active {
+    background: rgba(0, 255, 136, 0.15);
+    border-color: var(--accent-success);
+    color: var(--accent-success);
+}
+
+.live-dot {
+    width: 6px;
+    height: 6px;
+    background: var(--text-muted);
+    border-radius: 50%;
+    transition: background var(--transition-fast);
+}
+
+.live-btn.active .live-dot {
+    background: var(--accent-success);
+    animation: pulse 2s ease-in-out infinite;
+}
+
+.timeline-hint {
+    text-align: center;
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: var(--space-xs);
+    animation: fadeIn 0.5s ease-out;
+}
+
+/* ================================
    Camera Tabs
    ================================ */
 .camera-tabs {
