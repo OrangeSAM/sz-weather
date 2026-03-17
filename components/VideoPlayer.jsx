@@ -79,7 +79,7 @@ export default function VideoPlayer({ currentCameraIndex, onTimeUpdate }) {
     };
 
     const handleError = () => {
-        console.error('[Video] Error');
+        console.error('[Video] Error, retryCount:', retryCountRef.current);
 
         if (retryCountRef.current < MAX_RETRIES) {
             retryCountRef.current++;
@@ -90,9 +90,10 @@ export default function VideoPlayer({ currentCameraIndex, onTimeUpdate }) {
             const timestamp = currentVideoTime || getVideoTimestamp(timeSuffix);
             const prevTimestamp = getPreviousTimestamp(timestamp, timeSuffix);
 
-            console.log(`[Video] Retrying with previous timestamp:`, prevTimestamp);
+            console.log(`[Video] Retrying with previous timestamp:`, prevTimestamp, 'format:', formatVideoTimestamp(prevTimestamp));
             loadVideo(prevTimestamp);
         } else {
+            console.log('[Video] Max retries reached, showing error');
             setIsLoading(false);
             setHasError(true);
         }
