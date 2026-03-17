@@ -1,6 +1,4 @@
 /** @type {import('next').NextConfig} */
-import withPWA from 'next-pwa';
-
 const nextConfig = {
   // 静态导出配置（用于 GitHub Pages）
   output: 'export',
@@ -11,9 +9,4 @@ const nextConfig = {
   },
 };
 
-export default withPWA({
-  dest: 'public',
-  register: true,
-  skipWaiting: true,
-  disable: process.env.NODE_ENV === 'development',
-})(nextConfig);
+export default nextConfig;
