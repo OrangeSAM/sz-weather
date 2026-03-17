@@ -17,7 +17,6 @@ export default function VideoTimeline({ cameraTimeSuffix, onSelectTimestamp, onB
         const startTime = new Date(endTime.getTime() - HOURS_24_MS);
 
         const times = getAllTimestampsInRange(startTime, endTime, cameraTimeSuffix);
-        console.log('[Timeline] Generated timestamps:', times.length, times);
         setTimestamps(times);
 
         // 默认选中最新时间点
@@ -36,13 +35,11 @@ export default function VideoTimeline({ cameraTimeSuffix, onSelectTimestamp, onB
         const index = Math.floor(percentage * (timestamps.length - 1));
         const clampedIndex = Math.max(0, Math.min(timestamps.length - 1, index));
 
-        console.log('[Timeline] Clicked at percentage:', percentage, 'index:', clampedIndex);
         setSelectedIndex(clampedIndex);
         setShowHint(false);
 
         const timestamp = timestamps[clampedIndex];
         if (timestamp) {
-            console.log('[Timeline] Selecting timestamp:', timestamp);
             onSelectTimestamp(timestamp);
         }
     };
