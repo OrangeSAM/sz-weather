@@ -61,6 +61,20 @@ export default function VideoTimeline({ cameraTimeSuffix, onSelectTimestamp, onB
         return time ? formatDisplayTime(time) : '';
     };
 
+    // 生成实际视频时间点标记（每20分钟一个）
+    const videoMarkers = timestamps.map((ts, idx) => {
+        const position = (idx / Math.max(1, timestamps.length - 1)) * 100;
+        const isPast = idx < timestamps.length - 1;
+        return (
+            <div
+                key={ts.getTime()}
+                className={`video-marker ${isPast ? 'past' : ''}`}
+                style={{ left: `${position}%` }}
+                title={formatDisplayTime(ts)}
+            />
+        );
+    });
+
     // 生成小时刻度标签（每3小时）
     const hourMarks = [];
     for (let i = 0; i <= 24; i += 3) {
@@ -83,6 +97,9 @@ export default function VideoTimeline({ cameraTimeSuffix, onSelectTimestamp, onB
                 {/* 进度背景 */}
                 <div className="timeline-progress" style={{ width: `${getSelectedPosition()}%` }} />
 
+                {/* 视频时间点标记 */}
+                <div className="video-markers">{videoMarkers}</div>
+
                 {/* 刻度线 */}
                 <div className="timeline-ticks">{hourMarks}</div>
 
@@ -94,7 +111,7 @@ export default function VideoTimeline({ cameraTimeSuffix, onSelectTimestamp, onB
 
             <div className="timeline-footer">
                 <button
-                    className={`live-btn ${selectedIndex < 0 ? 'active' : ''}`}
+                    className={`live-btn ${selectedIndex >= 0 ? 'active' : ''}`}
                     onClick={handleLiveClick}
                 >
                     <span className="live-dot" />

@@ -503,6 +503,30 @@ body {
     font-family: var(--font-mono);
 }
 
+/* 视频时间点标记 - 显示实际可点击的20分钟间隔 */
+.video-markers {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+}
+
+.video-marker {
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 2px;
+    height: 12px;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 1px;
+}
+
+.video-marker.past {
+    background: rgba(0, 212, 255, 0.5);
+}
+
 .timeline-handle {
     position: absolute;
     top: 50%;
