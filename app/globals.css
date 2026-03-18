@@ -606,6 +606,94 @@ body {
 }
 
 /* ================================
+   Timeline Wheel (Mobile) - 拖拽滚轮选择器
+   ================================ */
+.timeline-wheel-wrapper {
+    position: relative;
+    overflow: hidden;
+    padding: var(--space-sm) 0;
+    /* 隐藏滚动条但允许滚动 */
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.timeline-wheel-wrapper::-webkit-scrollbar {
+    display: none;
+}
+
+/* 中央指示线 */
+.wheel-center-indicator {
+    position: absolute;
+    left: 50%;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--accent-color);
+    transform: translateX(-50%);
+    z-index: 10;
+    pointer-events: none;
+}
+
+/* 可滚动的尺子 */
+.timeline-wheel-strip {
+    display: flex;
+    will-change: transform;
+    cursor: grab;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: pan-y;
+}
+
+.timeline-wheel-strip:active {
+    cursor: grabbing;
+}
+
+/* 释放后的平滑过渡 */
+.timeline-wheel-strip:not(.dragging) {
+    transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* 拖动时无过渡 */
+.timeline-wheel-strip.dragging {
+    transition: none;
+}
+
+/* 单个时间点 */
+.wheel-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-xs) 0;
+    flex-shrink: 0;
+    opacity: 0.4;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.wheel-item.center {
+    opacity: 1;
+    transform: scale(1.1);
+}
+
+.wheel-item-time {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.wheel-item.center .wheel-item-time {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.wheel-item-label {
+    font-size: 9px;
+    color: var(--accent-color);
+    margin-top: 2px;
+    font-weight: 500;
+}
+
+/* ================================
    Camera Tabs
    ================================ */
 .camera-tabs {
