@@ -208,7 +208,23 @@ export default function VideoTimeline({ cameraTimeSuffix, onSelectTimestamp, onB
     const getDisplayLabel = (index) => {
         if (index < 0) return '直播';
         const time = timestamps[index];
-        return time ? formatDisplayTime(time) : '';
+        if (!time) return '';
+
+        const now = new Date();
+        const yesterday = new Date(now);
+        yesterday.setDate(yesterday.getDate() - 1);
+
+        const hours = String(time.getHours()).padStart(2, '0');
+        const minutes = String(time.getMinutes()).padStart(2, '0');
+        const timeStr = `${hours}:${minutes}`;
+
+        if (time.toDateString() === now.toDateString()) {
+            return timeStr;
+        } else if (time.toDateString() === yesterday.toDateString()) {
+            return `昨天 ${timeStr}`;
+        } else {
+            return `${time.getMonth() + 1}/${time.getDate()} ${timeStr}`;
+        }
     };
 
     const centerIndex = getIndexFromOffsetX(offsetX);

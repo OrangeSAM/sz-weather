@@ -703,6 +703,11 @@ body {
     opacity: 0.4;
 }
 
+.wheel-item.selected .wheel-item-dot {
+    background-color: var(--accent-primary);
+    opacity: 1;
+}
+
 .wheel-item-label {
     font-size: 9px;
     color: var(--accent-color);
