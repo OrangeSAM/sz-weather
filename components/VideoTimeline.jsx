@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { getAllTimestampsInRange, formatDisplayTime } from '@/lib/cameras';
+import { getAllTimestampsInRange, formatDisplayTime, shouldShowTimeLabel } from '@/lib/cameras';
 
 const VISIBLE_COUNT = 10; // 可见时间点数量
 const ITEM_WIDTH = 65; // 每个时间点的宽度(px)
@@ -66,13 +66,27 @@ export default function VideoTimeline({ cameraTimeSuffix, onSelectTimestamp, onB
         return offset;
     }, [containerWidth, getMaxOffsetX]);
 
-    // 根据偏移量计算当前中心索引
+    // 根据偏移量计算当前应该选中的索引
+    // 确保边界情况下也能正确选中最左/最右侧的时刻
     const getIndexFromOffsetX = useCallback((offset) => {
+        const maxOffset = getMaxOffsetX();
+
+        // 左侧边界：offset <= 0 时，选中第一个时间点（最左侧）
+        if (offset <= 0) {
+            return 0;
+        }
+
+        // 右侧边界：offset >= maxOffset 时，选中最后一个时间点（最右侧）
+        if (offset >= maxOffset) {
+            return timestamps.length - 1;
+        }
+
+        // 中间区域：正常计算中心索引
         const centerX = containerWidth / 2;
         const itemCenterX = centerX + offset;
         const index = Math.round((itemCenterX - ITEM_WIDTH / 2) / ITEM_WIDTH);
         return Math.max(0, Math.min(timestamps.length - 1, index));
-    }, [containerWidth, timestamps.length]);
+    }, [containerWidth, timestamps.length, getMaxOffsetX]);
 
     // 选中时间点
     const selectTimestamp = useCallback((index, animate = true) => {
@@ -85,6 +99,20 @@ export default function VideoTimeline({ cameraTimeSuffix, onSelectTimestamp, onB
         setOffsetX(targetOffset);
 
         // 触发视频播放
+        const timestamp = timestamps[index];
+        if (timestamp) {
+            onSelectTimestamp(timestamp);
+        }
+    }, [timestamps, onSelectTimestamp, getOffsetXForIndex]);
+
+    // 点击时刻处理
+    const handleItemClick = useCallback((index) => {
+        if (index < 0 || index >= timestamps.length) return;
+
+        setSelectedIndex(index);
+        const targetOffset = getOffsetXForIndex(index);
+        setOffsetX(targetOffset);
+
         const timestamp = timestamps[index];
         if (timestamp) {
             onSelectTimestamp(timestamp);
@@ -213,12 +241,17 @@ export default function VideoTimeline({ cameraTimeSuffix, onSelectTimestamp, onB
                     {timestamps.map((timestamp, index) => (
                         <div
                             key={timestamp.getTime()}
-                            className={`wheel-item ${centerIndex === index ? 'center' : ''} ${index > timestamps.length - 1 ? 'future' : ''}`}
+                            className={`wheel-item ${selectedIndex === index ? 'selected' : ''} ${centerIndex === index ? 'center' : ''} ${index > timestamps.length - 1 ? 'future' : ''}`}
                             style={{ width: ITEM_WIDTH, flexShrink: 0 }}
+                            onClick={() => handleItemClick(index)}
                         >
-                            <span className="wheel-item-time">
-                                {formatDisplayTime(timestamp)}
-                            </span>
+                            {shouldShowTimeLabel(index) ? (
+                                <span className="wheel-item-time">
+                                    {formatDisplayTime(timestamp)}
+                                </span>
+                            ) : (
+                                <span className="wheel-item-dot" />
+                            )}
                             {index === timestamps.length - 1 && (
                                 <span className="wheel-item-label">最新</span>
                             )}

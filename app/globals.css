@@ -675,6 +675,15 @@ body {
     transform: scale(1.1);
 }
 
+.wheel-item.selected {
+    opacity: 1;
+}
+
+.wheel-item.selected .wheel-item-time {
+    color: var(--accent-color);
+    font-weight: 600;
+}
+
 .wheel-item-time {
     font-size: 13px;
     font-weight: 500;
@@ -684,6 +693,14 @@ body {
 .wheel-item.center .wheel-item-time {
     color: var(--text-primary);
     font-weight: 600;
+}
+
+.wheel-item-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: var(--text-secondary);
+    opacity: 0.4;
 }
 
 .wheel-item-label {
