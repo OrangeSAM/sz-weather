@@ -49,6 +49,7 @@ export default function Home() {
             />
             <VideoTimeline
                 cameraTimeSuffix={timeSuffix}
+                cameraId={currentCamera.id}
                 onSelectTimestamp={handleSelectTimestamp}
                 onBackToLive={handleBackToLive}
             />

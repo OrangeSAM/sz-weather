@@ -1,13 +1,13 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { getAllTimestampsInRange, formatDisplayTime, shouldShowTimeLabel } from '@/lib/cameras';
+import { getAllTimestampsInRange, formatDisplayTime, shouldShowTimeLabel, getSpecialMoment } from '@/lib/cameras';
 
 const VISIBLE_COUNT = 10; // 可见时间点数量
 const ITEM_WIDTH = 65; // 每个时间点的宽度(px)
 const HOURS_24_MS = 24 * 60 * 60 * 1000;
 
-export default function VideoTimeline({ cameraTimeSuffix, onSelectTimestamp, onBackToLive }) {
+export default function VideoTimeline({ cameraTimeSuffix, cameraId, onSelectTimestamp, onBackToLive }) {
     const [timestamps, setTimestamps] = useState([]);
     const [selectedIndex, setSelectedIndex] = useState(-1);
     const [offsetX, setOffsetX] = useState(0);
@@ -271,14 +271,19 @@ export default function VideoTimeline({ cameraTimeSuffix, onSelectTimestamp, onB
                     onMouseUp={handleMouseUp}
                     onMouseLeave={handleMouseLeave}
                 >
-                    {timestamps.map((timestamp, index) => (
+                    {timestamps.map((timestamp, index) => {
+                        const specialMoment = getSpecialMoment(timestamp, cameraId);
+                        const showTimeLabel = shouldShowTimeLabel(index);
+                        return (
                         <div
                             key={timestamp.getTime()}
                             className={`wheel-item ${selectedIndex === index ? 'selected' : ''} ${centerIndex === index ? 'center' : ''} ${index > timestamps.length - 1 ? 'future' : ''}`}
                             style={{ width: ITEM_WIDTH, flexShrink: 0 }}
                             onClick={() => handleItemClick(index)}
                         >
-                            {shouldShowTimeLabel(index) ? (
+                            {specialMoment ? (
+                                <span className="wheel-item-special">{specialMoment === 'sunrise' ? '🌅' : '🌄'}</span>
+                            ) : showTimeLabel ? (
                                 <span className="wheel-item-time">
                                     {formatDisplayTime(timestamp)}
                                 </span>
@@ -286,7 +291,8 @@ export default function VideoTimeline({ cameraTimeSuffix, onSelectTimestamp, onB
                                 <span className="wheel-item-dot" />
                             )}
                         </div>
-                    ))}
+                        );
+                    })}
                 </div>
             </div>
         </div>

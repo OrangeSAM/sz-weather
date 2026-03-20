@@ -699,6 +699,13 @@ body {
     font-size: 13px;
     font-weight: 500;
     color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.wheel-item-special {
+    font-size: 14px;
 }
 
 .wheel-item.center .wheel-item-time {
