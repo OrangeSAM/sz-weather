@@ -27,11 +27,18 @@ export default function VideoTimeline({ cameraTimeSuffix, onSelectTimestamp, onB
         const times = getAllTimestampsInRange(startTime, endTime, cameraTimeSuffix);
         setTimestamps(times);
 
-        // 默认选中最新时间点
-        if (times.length > 0) {
-            setSelectedIndex(times.length - 1);
-        }
+        // 初始状态不选中任何时间点，保持直播状态
+        // 用户点击时间点时才触发视频播放
+        setSelectedIndex(-1);
     }, [cameraTimeSuffix]);
+
+    // 当时间点和容器宽度都准备好时，设置初始偏移量到最新时间点
+    useEffect(() => {
+        if (timestamps.length > 0 && containerWidth > 0) {
+            const maxOffset = Math.max(0, timestamps.length * ITEM_WIDTH - containerWidth);
+            setOffsetX(maxOffset);
+        }
+    }, [timestamps.length, containerWidth]);
 
     // 获取容器宽度
     useEffect(() => {
@@ -232,8 +239,13 @@ export default function VideoTimeline({ cameraTimeSuffix, onSelectTimestamp, onB
     return (
         <div className="timeline-container">
             <div className="timeline-header">
-                <span className="timeline-title">视频回放</span>
                 <span className="timeline-current">{getDisplayLabel(selectedIndex)}</span>
+                <span
+                    className={`timeline-return-live ${selectedIndex >= 0 ? 'active' : ''}`}
+                    onClick={handleLiveClick}
+                >
+                    返回直播
+                </span>
             </div>
 
             {/* 滚轮选择器 */}
@@ -274,16 +286,6 @@ export default function VideoTimeline({ cameraTimeSuffix, onSelectTimestamp, onB
                         </div>
                     ))}
                 </div>
-            </div>
-
-            <div className="timeline-footer">
-                <button
-                    className={`live-btn ${selectedIndex >= 0 ? 'active' : ''}`}
-                    onClick={handleLiveClick}
-                >
-                    <span className="live-dot" />
-                    返回直播
-                </button>
             </div>
         </div>
     );

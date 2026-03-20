@@ -40,11 +40,7 @@ export default function Home() {
 
     return (
         <div className="app-container">
-            <Header
-                cameraName={currentCamera.name}
-                updateTime={updateTime}
-                isLive={isLive}
-            />
+            <Header />
             <VideoPlayer
                 currentCameraIndex={currentCameraIndex}
                 onTimeUpdate={handleTimeUpdate}
