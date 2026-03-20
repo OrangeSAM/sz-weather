@@ -213,7 +213,12 @@ export default function VideoTimeline({ cameraTimeSuffix, onSelectTimestamp, onB
     };
 
     const getDisplayLabel = (index) => {
-        if (index < 0) return '直播';
+        // 直播状态显示当前时间
+        if (index < 0) {
+            const now = new Date();
+            return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+        }
+
         const time = timestamps[index];
         if (!time) return '';
 
@@ -279,9 +284,6 @@ export default function VideoTimeline({ cameraTimeSuffix, onSelectTimestamp, onB
                                 </span>
                             ) : (
                                 <span className="wheel-item-dot" />
-                            )}
-                            {index === timestamps.length - 1 && (
-                                <span className="wheel-item-label">最新</span>
                             )}
                         </div>
                     ))}
