@@ -31,13 +31,20 @@ export default function VideoPlayer({ currentCameraIndex, onTimeUpdate, selected
         onTimeUpdateRef.current = onTimeUpdate;
     }, [onTimeUpdate]);
 
-    // 切换到历史模式
+    // 切换到历史模式 / 返回直播
     useEffect(() => {
         if (selectedTimestamp) {
             selectedTimestampRef.current = selectedTimestamp;
             setIsPlayingHistory(true);
             retryCountRef.current = 0;
             loadVideo(selectedTimestamp);
+        } else if (selectedTimestamp === null && isPlayingHistory) {
+            selectedTimestampRef.current = null;
+            setIsPlayingHistory(false);
+            retryCountRef.current = 0;
+            const camera = CAMERAS[currentCameraIndex];
+            const timeSuffix = camera.timeSuffix || 19;
+            loadVideo(getVideoTimestamp(timeSuffix));
         }
     }, [selectedTimestamp]);
 
