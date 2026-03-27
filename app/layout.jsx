@@ -1,9 +1,13 @@
 import "./globals.css";
 
+const manifestPath = process.env.NODE_ENV === "production"
+  ? "/sz-weather/manifest.json"
+  : "/manifest.json";
+
 export const metadata = {
   title: "深圳天气实景监测",
   description: "实时查看深圳市气象局13个监控点位的天气画面",
-  manifest: "/manifest.json",
+  manifest: manifestPath,
 };
 
 export default function RootLayout({ children }) {
@@ -14,7 +18,6 @@ export default function RootLayout({ children }) {
         <meta name="theme-color" content="#0a1428" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        <link rel="manifest" href="/manifest.json" />
       </head>
       <body>
         {children}
