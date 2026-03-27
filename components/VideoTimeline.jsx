@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { getAllTimestampsInRange, formatDisplayTime, shouldShowTimeLabel, getSpecialMoment, SUNRISE_CAMERAS, SUNSET_CAMERAS } from '@/lib/cameras';
+import { getAllTimestampsInRange, formatDisplayTime, shouldShowTimeLabel, getSpecialMoment, SUNRISE_CAMERAS, SUNSET_CAMERAS, getSunriseAndSunset } from '@/lib/cameras';
 
 const VISIBLE_COUNT = 10; // 可见时间点数量
 const ITEM_WIDTH = 65; // 每个时间点的宽度(px)
@@ -222,6 +222,21 @@ export default function VideoTimeline({ cameraTimeSuffix, cameraId, onSelectTime
         onBackToLive();
     };
 
+    const handleSpecialMomentClick = (type) => {
+        const { sunrise, sunset } = getSunriseAndSunset(new Date());
+        const target = type === 'sunrise' ? sunrise : sunset;
+        let closestIndex = 0;
+        let minDiff = Infinity;
+        timestamps.forEach((t, i) => {
+            const diff = Math.abs(t.getTime() - target.getTime());
+            if (diff < minDiff) {
+                minDiff = diff;
+                closestIndex = i;
+            }
+        });
+        selectTimestamp(closestIndex);
+    };
+
     const getDisplayLabel = (index) => {
         // 直播状态显示当前时间
         if (index < 0) {
@@ -259,8 +274,8 @@ export default function VideoTimeline({ cameraTimeSuffix, cameraId, onSelectTime
                     className={`timeline-return-live ${selectedIndex >= 0 ? 'active' : ''}`}
                     onClick={handleLiveClick}
                 >
-                    {SUNRISE_CAMERAS.includes(cameraId) && <span style={{ marginRight: 4 }}>🌅</span>}
-                    {SUNSET_CAMERAS.includes(cameraId) && <span style={{ marginRight: 4 }}>🌄</span>}
+                    {SUNRISE_CAMERAS.includes(cameraId) && <span style={{ marginRight: 4, cursor: 'pointer' }} onClick={(e) => { e.stopPropagation(); handleSpecialMomentClick('sunrise'); }}>🌅</span>}
+                    {SUNSET_CAMERAS.includes(cameraId) && <span style={{ marginRight: 4, cursor: 'pointer' }} onClick={(e) => { e.stopPropagation(); handleSpecialMomentClick('sunset'); }}>🌄</span>}
                     返回直播
                 </span>
             </div>
