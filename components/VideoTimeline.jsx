@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { getAllTimestampsInRange, formatDisplayTime, shouldShowTimeLabel, getSpecialMoment } from '@/lib/cameras';
+import { getAllTimestampsInRange, formatDisplayTime, shouldShowTimeLabel, getSpecialMoment, SUNRISE_CAMERAS, SUNSET_CAMERAS } from '@/lib/cameras';
 
 const VISIBLE_COUNT = 10; // 可见时间点数量
 const ITEM_WIDTH = 65; // 每个时间点的宽度(px)
@@ -259,6 +259,8 @@ export default function VideoTimeline({ cameraTimeSuffix, cameraId, onSelectTime
                     className={`timeline-return-live ${selectedIndex >= 0 ? 'active' : ''}`}
                     onClick={handleLiveClick}
                 >
+                    {SUNRISE_CAMERAS.includes(cameraId) && <span style={{ marginRight: 4 }}>🌅</span>}
+                    {SUNSET_CAMERAS.includes(cameraId) && <span style={{ marginRight: 4 }}>🌄</span>}
                     返回直播
                 </span>
             </div>
