@@ -7,7 +7,7 @@ const VISIBLE_COUNT = 10; // 可见时间点数量
 const ITEM_WIDTH = 65; // 每个时间点的宽度(px)
 const HOURS_24_MS = 24 * 60 * 60 * 1000;
 
-export default function VideoTimeline({ cameraTimeSuffix, cameraId, onSelectTimestamp, onBackToLive }) {
+export default function VideoTimeline({ cameraTimeSuffix, cameraId, onSelectTimestamp, onBackToLive, activeTimestamp }) {
     const [timestamps, setTimestamps] = useState([]);
     const [selectedIndex, setSelectedIndex] = useState(-1);
     const [offsetX, setOffsetX] = useState(0);
@@ -32,9 +32,19 @@ export default function VideoTimeline({ cameraTimeSuffix, cameraId, onSelectTime
         setSelectedIndex(-1);
     }, [cameraTimeSuffix]);
 
-    // 当时间点和容器宽度都准备好时，设置初始偏移量到最新时间点
+    // 当时间点和容器宽度都准备好时，设置初始偏移量
     useEffect(() => {
         if (timestamps.length > 0 && containerWidth > 0) {
+            if (activeTimestamp) {
+                // 切换摄像头时定位到当前播放时刻
+                const idx = timestamps.findIndex(t => t.getTime() === activeTimestamp.getTime());
+                if (idx >= 0) {
+                    setSelectedIndex(idx);
+                    setOffsetX(getOffsetXForIndex(idx));
+                    return;
+                }
+            }
+            // 默认定位到最新时间点
             const maxOffset = Math.max(0, timestamps.length * ITEM_WIDTH - containerWidth);
             setOffsetX(maxOffset);
         }
@@ -277,7 +287,7 @@ export default function VideoTimeline({ cameraTimeSuffix, cameraId, onSelectTime
                         return (
                         <div
                             key={timestamp.getTime()}
-                            className={`wheel-item ${selectedIndex === index ? 'selected' : ''} ${centerIndex === index ? 'center' : ''} ${index > timestamps.length - 1 ? 'future' : ''}`}
+                            className={`wheel-item ${selectedIndex === index || (selectedIndex === -1 && index === timestamps.length - 1) ? 'selected' : ''} ${centerIndex === index ? 'center' : ''} ${index > timestamps.length - 1 ? 'future' : ''}`}
                             style={{ width: ITEM_WIDTH, flexShrink: 0 }}
                             onClick={() => handleItemClick(index)}
                         >

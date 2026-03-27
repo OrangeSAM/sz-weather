@@ -12,6 +12,7 @@ export default function Home() {
     const [updateTime, setUpdateTime] = useState('--:--');
     const [selectedTimestamp, setSelectedTimestamp] = useState(null);
     const [isLive, setIsLive] = useState(true);
+    const [currentVideoTimestamp, setCurrentVideoTimestamp] = useState(null);
 
     const currentCamera = CAMERAS[currentCameraIndex];
     const timeSuffix = currentCamera.timeSuffix || 19;
@@ -20,12 +21,15 @@ export default function Home() {
         if (index !== currentCameraIndex) {
             setCurrentCameraIndex(index);
             setSelectedTimestamp(null);
-            setIsLive(true);
         }
     };
 
     const handleTimeUpdate = (time) => {
         setUpdateTime(time);
+    };
+
+    const handleTimestampChange = (timestamp) => {
+        setCurrentVideoTimestamp(timestamp);
     };
 
     const handleSelectTimestamp = (timestamp) => {
@@ -44,7 +48,9 @@ export default function Home() {
             <VideoPlayer
                 currentCameraIndex={currentCameraIndex}
                 onTimeUpdate={handleTimeUpdate}
+                onTimestampChange={handleTimestampChange}
                 selectedTimestamp={selectedTimestamp}
+                initialTimestamp={isLive ? null : currentVideoTimestamp}
                 onBackToLive={handleBackToLive}
             />
             <VideoTimeline
@@ -52,6 +58,7 @@ export default function Home() {
                 cameraId={currentCamera.id}
                 onSelectTimestamp={handleSelectTimestamp}
                 onBackToLive={handleBackToLive}
+                activeTimestamp={isLive ? null : currentVideoTimestamp}
             />
             <CameraTabs
                 currentCameraIndex={currentCameraIndex}

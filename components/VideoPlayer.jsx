@@ -13,7 +13,7 @@ import {
 /**
  * VideoPlayer 组件 - 视频播放器
  */
-export default function VideoPlayer({ currentCameraIndex, onTimeUpdate, selectedTimestamp, onPlaybackComplete, onBackToLive }) {
+export default function VideoPlayer({ currentCameraIndex, onTimeUpdate, onTimestampChange, selectedTimestamp, initialTimestamp, onPlaybackComplete, onBackToLive }) {
     const videoRef = useRef(null);
     const [isLoading, setIsLoading] = useState(true);
     const [hasError, setHasError] = useState(false);
@@ -23,6 +23,7 @@ export default function VideoPlayer({ currentCameraIndex, onTimeUpdate, selected
     const currentUrlRef = useRef(null); // 追踪当前正在加载的 URL
     const isRetryingRef = useRef(false); // 标记是否正在重试
     const onTimeUpdateRef = useRef(onTimeUpdate); // 用 ref 保存，避免触发 useEffect
+    const onTimestampChangeRef = useRef(onTimestampChange);
     const MAX_RETRIES = 2;
     const selectedTimestampRef = useRef(null); // 记录选中的历史时间
 
@@ -30,6 +31,10 @@ export default function VideoPlayer({ currentCameraIndex, onTimeUpdate, selected
     useEffect(() => {
         onTimeUpdateRef.current = onTimeUpdate;
     }, [onTimeUpdate]);
+
+    useEffect(() => {
+        onTimestampChangeRef.current = onTimestampChange;
+    }, [onTimestampChange]);
 
     // 切换到历史模式 / 返回直播
     useEffect(() => {
@@ -66,6 +71,9 @@ export default function VideoPlayer({ currentCameraIndex, onTimeUpdate, selected
         if (onTimeUpdateRef.current) {
             onTimeUpdateRef.current(formatDisplayTime(timestamp));
         }
+        if (onTimestampChangeRef.current) {
+            onTimestampChangeRef.current(timestamp);
+        }
 
         if (videoRef.current) {
             videoRef.current.src = videoUrl;
@@ -78,7 +86,7 @@ export default function VideoPlayer({ currentCameraIndex, onTimeUpdate, selected
         retryCountRef.current = 0;
         const camera = CAMERAS[currentCameraIndex];
         const timeSuffix = camera.timeSuffix || 19;
-        const timestamp = getVideoTimestamp(timeSuffix);
+        const timestamp = initialTimestamp || getVideoTimestamp(timeSuffix);
         loadVideo(timestamp);
     }, [currentCameraIndex, loadVideo]);
 
