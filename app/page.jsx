@@ -5,10 +5,13 @@ import Header from '@/components/Header';
 import VideoPlayer from '@/components/VideoPlayer';
 import VideoTimeline from '@/components/VideoTimeline';
 import CameraTabs from '@/components/CameraTabs';
+import WeatherBar from '@/components/WeatherBar';
+import AboutPanel from '@/components/AboutPanel';
 import { CAMERAS } from '@/lib/cameras';
 
 export default function Home() {
     const [currentCameraIndex, setCurrentCameraIndex] = useState(0);
+    const [isAboutOpen, setIsAboutOpen] = useState(false);
     const [updateTime, setUpdateTime] = useState('--:--');
     const [selectedTimestamp, setSelectedTimestamp] = useState(null);
     const [isLive, setIsLive] = useState(true);
@@ -44,15 +47,21 @@ export default function Home() {
 
     return (
         <div className="app-container">
-            <Header />
-            <VideoPlayer
-                currentCameraIndex={currentCameraIndex}
-                onTimeUpdate={handleTimeUpdate}
-                onTimestampChange={handleTimestampChange}
-                selectedTimestamp={selectedTimestamp}
-                initialTimestamp={isLive ? null : currentVideoTimestamp}
-                onBackToLive={handleBackToLive}
-            />
+            <Header onAboutOpen={() => setIsAboutOpen(true)} />
+            <WeatherBar locationId={currentCamera.locationId} />
+            <div className="video-section">
+                <VideoPlayer
+                    currentCameraIndex={currentCameraIndex}
+                    onTimeUpdate={handleTimeUpdate}
+                    onTimestampChange={handleTimestampChange}
+                    selectedTimestamp={selectedTimestamp}
+                    initialTimestamp={isLive ? null : currentVideoTimestamp}
+                    onBackToLive={handleBackToLive}
+                />
+                {currentCamera.description && (
+                    <div className="camera-description">{currentCamera.description}</div>
+                )}
+            </div>
             <VideoTimeline
                 cameraTimeSuffix={timeSuffix}
                 cameraId={currentCamera.id}
@@ -64,6 +73,7 @@ export default function Home() {
                 currentCameraIndex={currentCameraIndex}
                 onCameraSelect={handleCameraSelect}
             />
+            {isAboutOpen && <AboutPanel onClose={() => setIsAboutOpen(false)} />}
         </div>
     );
 }
