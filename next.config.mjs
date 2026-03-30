@@ -2,8 +2,8 @@
 const nextConfig = {
   // 静态导出配置（用于 GitHub Pages）
   output: 'export',
-  // 静态资源路径前缀
-  basePath: process.env.NODE_ENV === 'production' ? '/sz-weather' : '',
+  // 自定义域名部署，无需 basePath
+  basePath: '',
   images: {
     unoptimized: true,
   },
