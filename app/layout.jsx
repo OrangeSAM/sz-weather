@@ -1,13 +1,9 @@
 import "./globals.css";
 
-const manifestPath = process.env.NODE_ENV === "production"
-  ? "/sz-weather/manifest.json"
-  : "/manifest.json";
-
 export const metadata = {
   title: "深圳天气实景监测",
   description: "实时查看深圳市气象局13个监控点位的天气画面",
-  manifest: manifestPath,
+  manifest: "/manifest.json",
 };
 
 export default function RootLayout({ children }) {

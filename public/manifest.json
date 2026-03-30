@@ -2,14 +2,14 @@
     "name": "深圳天气实景监测",
     "short_name": "深圳天气",
     "description": "实时查看深圳市气象局13个监控点位的天气画面，包括福田、罗湖、南山、宝安、龙岗、大鹏新区等多个区域，适合需要关注本地天气状况的用户",
-    "start_url": "/sz-weather/",
+    "start_url": "/",
     "display": "fullscreen",
     "orientation": "any",
-    "background_color": "#050a14",
-    "theme_color": "#0a1428",
+    "background_color": "#f4f0e8",
+    "theme_color": "#ede8de",
     "categories": ["weather", "utilities", "navigation"],
     "lang": "zh-CN",
-    "scope": "/sz-weather/",
+    "scope": "/",
     "icons": [
         {
             "src": "icons/icon-192x192.png",
