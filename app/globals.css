@@ -239,6 +239,15 @@ body {
     box-shadow: 0 4px 24px rgba(140, 96, 48, 0.15);
 }
 
+/* 13寸笔记本屏幕（1024px-1500px）：减小视频最大宽度，两侧留白 */
+@media (min-width: 1024px) and (max-width: 1500px) {
+    .video-wrapper {
+        max-width: 75%;
+        margin: 0 auto;
+    }
+
+}
+
 /* Video Element */
 .video-wrapper video {
     width: 100%;
@@ -1101,6 +1110,7 @@ body {
 .camera-description {
     width: 100%;
     max-width: 1200px;
+    margin: 0 auto;
     padding: var(--space-xs) 0;
     font-size: 13px;
     color: var(--text-secondary);
@@ -1111,16 +1121,7 @@ body {
     -webkit-line-clamp: 2;
     position: relative;
     z-index: 1;
-}
-
-@media (min-width: 640px) {
-    .camera-description {
-        white-space: nowrap;
-        display: block;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        -webkit-line-clamp: unset;
-    }
+    text-align: center;
 }
 
 /* ================================
