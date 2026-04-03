@@ -441,14 +441,14 @@ body {
     z-index: 100;
     background: var(--bg-secondary);
     border-top: 1px solid var(--border-subtle);
-    padding: var(--space-md) var(--space-lg);
+    padding: var(--space-sm) var(--space-lg);
 }
 
 .timeline-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: var(--space-sm);
+    margin-bottom: 4px;
 }
 
 .timeline-title {
@@ -477,9 +477,9 @@ body {
 
 .timeline-track {
     position: relative;
-    height: 48px;
+    height: 40px;
     background: var(--bg-tertiary);
-    border-radius: 8px;
+    border-radius: 6px;
     cursor: pointer;
     overflow: visible;
     touch-action: none;
@@ -571,7 +571,7 @@ body {
 .timeline-footer {
     display: flex;
     justify-content: center;
-    margin-top: var(--space-sm);
+    margin-top: 4px;
 }
 
 .live-btn {
@@ -771,13 +771,15 @@ body {
 .camera-tab {
     display: flex;
     align-items: center;
-    padding: var(--space-sm) var(--space-md);
+    justify-content: center;
+    padding: var(--space-md) var(--space-lg);
     background: transparent;
     border: none;
     border-right: 1px solid var(--border-subtle);
     cursor: pointer;
     transition: background var(--transition-fast);
     position: relative;
+    min-height: 56px;
 }
 
 .camera-tab:first-child {
@@ -798,11 +800,12 @@ body {
 
 .tab-name {
     font-family: var(--font-sans);
-    font-size: 12px;
+    font-size: 13px;
     color: var(--text-muted);
     white-space: nowrap;
     transition: color var(--transition-fast);
     letter-spacing: 0.03em;
+    text-align: center;
 }
 
 .camera-tab:hover .tab-name {
@@ -883,12 +886,8 @@ body {
 }
 
 @media (min-width: 1024px) {
-    .video-wrapper {
-        max-height: calc(100vh - var(--header-height) - var(--tab-height) - 60px);
-    }
-
     .camera-tabs {
-        padding: var(--space-lg);
+        padding: 0 var(--space-lg);
     }
 
     .tabs-track {
