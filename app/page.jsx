@@ -7,7 +7,7 @@ import VideoTimeline from '@/components/VideoTimeline';
 import CameraTabs from '@/components/CameraTabs';
 import WeatherBar from '@/components/WeatherBar';
 import AboutPanel from '@/components/AboutPanel';
-import { CAMERAS } from '@/lib/cameras';
+import { CAMERAS, getVideoUrl, formatVideoTimestamp } from '@/lib/cameras';
 
 export default function Home() {
     const [currentCameraIndex, setCurrentCameraIndex] = useState(0);
@@ -45,6 +45,21 @@ export default function Home() {
         setIsLive(true);
     };
 
+    const handleDownload = () => {
+        const timestamp = currentVideoTimestamp || new Date();
+        const videoUrl = getVideoUrl(currentCamera, timestamp);
+        const proxyUrl = `/api/download?url=${encodeURIComponent(videoUrl)}`;
+        const fileName = `深圳天气_${currentCamera.name}_${formatVideoTimestamp(timestamp)}.mp4`;
+
+        const link = document.createElement('a');
+        link.href = proxyUrl;
+        link.download = fileName;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
     return (
         <div className="app-container">
             <Header onAboutOpen={() => setIsAboutOpen(true)} />
@@ -59,7 +74,12 @@ export default function Home() {
                     onBackToLive={handleBackToLive}
                 />
                 {currentCamera.description && (
-                    <div className="camera-description">{currentCamera.description}</div>
+                    <div className="camera-description-wrapper">
+                        <div className="camera-description">{currentCamera.description}</div>
+                        <button className="download-link" onClick={handleDownload}>
+                            下载视频
+                        </button>
+                    </div>
                 )}
             </div>
             <VideoTimeline
