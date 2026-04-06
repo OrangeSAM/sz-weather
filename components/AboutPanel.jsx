@@ -22,12 +22,18 @@ export default function AboutPanel({ onClose }) {
                         </div>
                         <div className="about-meta-row">
                             <span className="about-meta-label">作者</span>
-                            <span className="about-meta-value">刘一笔</span>
+                            <a className="about-meta-value about-link" href="https://github.com/OrangeSAM/sz-weather" target="_blank" rel="noopener noreferrer">刘一笔</a>
                         </div>
                     </div>
-                    <div className="about-links">
-                        <a className="about-link" href="#" target="_blank" rel="noopener noreferrer">博客</a>
-                        <a className="about-link" href="#" target="_blank" rel="noopener noreferrer">GitHub</a>
+                    <div className="about-qr-codes">
+                        <div className="qr-code-item">
+                            <img src="/gzh.jpg" alt="公众号" />
+                            <span>公众号</span>
+                        </div>
+                        <div className="qr-code-item">
+                            <img src="/wxh.png" alt="微信号" />
+                            <span>微信</span>
+                        </div>
                     </div>
                 </div>
             </div>

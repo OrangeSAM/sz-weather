@@ -1272,6 +1272,33 @@ body {
     opacity: 1;
 }
 
+.about-qr-codes {
+    display: flex;
+    justify-content: center;
+    gap: var(--space-xl);
+    margin-top: var(--space-md);
+}
+
+.qr-code-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-xs);
+}
+
+.qr-code-item img {
+    width: 100px;
+    height: 100px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 1px solid var(--border-subtle);
+}
+
+.qr-code-item span {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
 /* ================================
    Utility Classes
    ================================ */
