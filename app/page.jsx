@@ -1,99 +1,20 @@
-'use client';
+import ObservatoryClient from '@/components/ObservatoryClient';
+import { CAMERAS, getCurrentEpochMs } from '@/lib/cameras';
 
-import { useState } from 'react';
-import Header from '@/components/Header';
-import VideoPlayer from '@/components/VideoPlayer';
-import VideoTimeline from '@/components/VideoTimeline';
-import CameraTabs from '@/components/CameraTabs';
-import WeatherBar from '@/components/WeatherBar';
-import AboutPanel from '@/components/AboutPanel';
-import { CAMERAS, getVideoUrl, formatVideoTimestamp } from '@/lib/cameras';
+export const dynamic = 'force-dynamic';
 
-export default function Home() {
-    const [currentCameraIndex, setCurrentCameraIndex] = useState(0);
-    const [isAboutOpen, setIsAboutOpen] = useState(false);
-    const [updateTime, setUpdateTime] = useState('--:--');
-    const [selectedTimestamp, setSelectedTimestamp] = useState(null);
-    const [isLive, setIsLive] = useState(true);
-    const [currentVideoTimestamp, setCurrentVideoTimestamp] = useState(null);
-
-    const currentCamera = CAMERAS[currentCameraIndex];
-    const timeSuffix = currentCamera.timeSuffix || 19;
-
-    const handleCameraSelect = (index) => {
-        if (index !== currentCameraIndex) {
-            setCurrentCameraIndex(index);
-            setSelectedTimestamp(null);
-        }
-    };
-
-    const handleTimeUpdate = (time) => {
-        setUpdateTime(time);
-    };
-
-    const handleTimestampChange = (timestamp) => {
-        setCurrentVideoTimestamp(timestamp);
-    };
-
-    const handleSelectTimestamp = (timestamp) => {
-        setSelectedTimestamp(timestamp);
-        setIsLive(false);
-    };
-
-    const handleBackToLive = () => {
-        setSelectedTimestamp(null);
-        setIsLive(true);
-    };
-
-    const handleDownload = () => {
-        const timestamp = currentVideoTimestamp || new Date();
-        const videoUrl = getVideoUrl(currentCamera, timestamp);
-        const proxyUrl = `/api/download?url=${encodeURIComponent(videoUrl)}`;
-        const fileName = `深圳天气_${currentCamera.name}_${formatVideoTimestamp(timestamp)}.mp4`;
-
-        const link = document.createElement('a');
-        link.href = proxyUrl;
-        link.download = fileName;
-        link.style.display = 'none';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    };
+export default async function Home({ searchParams }) {
+    const resolved = (await searchParams) || {};
+    const camId = Number(resolved.cam);
+    const camIdx = camId ? CAMERAS.findIndex((c) => c.id === camId) : 0;
+    const initialNowMs = getCurrentEpochMs();
 
     return (
-        <div className="app-container">
-            <Header onAboutOpen={() => setIsAboutOpen(true)} />
-            <WeatherBar locationId={currentCamera.locationId} />
-            <div className="video-section">
-                <VideoPlayer
-                    currentCameraIndex={currentCameraIndex}
-                    onTimeUpdate={handleTimeUpdate}
-                    onTimestampChange={handleTimestampChange}
-                    selectedTimestamp={selectedTimestamp}
-                    initialTimestamp={isLive ? null : currentVideoTimestamp}
-                    onBackToLive={handleBackToLive}
-                />
-                {currentCamera.description && (
-                    <div className="camera-description-wrapper">
-                        <div className="camera-description">{currentCamera.description}</div>
-                        <button className="download-link" onClick={handleDownload}>
-                            下载视频
-                        </button>
-                    </div>
-                )}
-            </div>
-            <VideoTimeline
-                cameraTimeSuffix={timeSuffix}
-                cameraId={currentCamera.id}
-                onSelectTimestamp={handleSelectTimestamp}
-                onBackToLive={handleBackToLive}
-                activeTimestamp={isLive ? null : currentVideoTimestamp}
-            />
-            <CameraTabs
-                currentCameraIndex={currentCameraIndex}
-                onCameraSelect={handleCameraSelect}
-            />
-            {isAboutOpen && <AboutPanel onClose={() => setIsAboutOpen(false)} />}
-        </div>
+        <ObservatoryClient
+            initialCameraIndex={camIdx >= 0 ? camIdx : 0}
+            initialTimestampStr={typeof resolved.t === 'string' ? resolved.t : null}
+            initialViewMode={resolved.view === 'grid' ? 'grid' : 'single'}
+            initialNowMs={initialNowMs}
+        />
     );
 }

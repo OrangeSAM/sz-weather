@@ -1,327 +1,346 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { getAllTimestampsInRange, formatDisplayTime, shouldShowTimeLabel, getSpecialMoment, SUNRISE_CAMERAS, SUNSET_CAMERAS, getSunriseAndSunset } from '@/lib/cameras';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import {
+    getAllTimestampsInRange,
+    formatDisplayTime,
+    formatVideoTimestamp,
+    formatRelativeTimestamp,
+    shouldShowTimeLabel,
+    getSpecialMoment,
+    getSolarTimes,
+    toShenzhenParts,
+    SUNRISE_CAMERAS,
+    SUNSET_CAMERAS,
+} from '@/lib/cameras';
 
-const VISIBLE_COUNT = 10; // 可见时间点数量
-const ITEM_WIDTH = 65; // 每个时间点的宽度(px)
+const ITEM_WIDTH = 64;
 const HOURS_24_MS = 24 * 60 * 60 * 1000;
 
-export default function VideoTimeline({ cameraTimeSuffix, cameraId, onSelectTimestamp, onBackToLive, activeTimestamp }) {
-    const [timestamps, setTimestamps] = useState([]);
-    const [selectedIndex, setSelectedIndex] = useState(-1);
-    const [offsetX, setOffsetX] = useState(0);
+function getSkyBandColor(timestamp, solar) {
+    const t = timestamp.getTime();
+    if (t < solar.dawn.getTime() || t > solar.dusk.getTime()) {
+        return '#1e2c44';
+    }
+    if (t >= solar.dawn.getTime() && t <= solar.goldenMorningEnd.getTime()) {
+        return '#d98a4c';
+    }
+    if (t >= solar.goldenEveningStart.getTime() && t <= solar.dusk.getTime()) {
+        return '#cc6b49';
+    }
+    return '#5d95bf';
+}
+
+/**
+ * VideoTimeline 组件 - 24 小时昼夜光谱时间轴与可拖拽延时控制尺
+ */
+export default function VideoTimeline({
+    cameraTimeSuffix,
+    cameraId,
+    initialNowMs,
+    isLive,
+    activeTimestamp,
+    availableKeys,
+    onSelectTimestamp,
+    onBackToLive,
+}) {
+    const [dragOffsetX, setDragOffsetX] = useState(0);
     const [isDragging, setIsDragging] = useState(false);
     const [containerWidth, setContainerWidth] = useState(0);
 
-    const containerRef = useRef(null);
-    const startX = useRef(0);
-    const baseOffsetX = useRef(0);
-    const animationRef = useRef(null);
+    const wrapperRef = useRef(null);
+    const startXRef = useRef(0);
+    const baseOffsetRef = useRef(0);
+    const didDragRef = useRef(false);
 
-    // 生成24小时时间范围内的所有时间点
-    useEffect(() => {
-        const endTime = new Date();
+    const timestamps = useMemo(() => {
+        const endTime = new Date(initialNowMs);
         const startTime = new Date(endTime.getTime() - HOURS_24_MS);
+        return getAllTimestampsInRange(startTime, endTime, cameraTimeSuffix);
+    }, [initialNowMs, cameraTimeSuffix]);
 
-        const times = getAllTimestampsInRange(startTime, endTime, cameraTimeSuffix);
-        setTimestamps(times);
-
-        // 初始状态不选中任何时间点，保持直播状态
-        // 用户点击时间点时才触发视频播放
-        setSelectedIndex(-1);
-    }, [cameraTimeSuffix]);
-
-    // 当时间点和容器宽度都准备好时，设置初始偏移量
-    useEffect(() => {
-        if (timestamps.length > 0 && containerWidth > 0) {
-            if (activeTimestamp) {
-                // 切换摄像头时定位到当前播放时刻
-                const idx = timestamps.findIndex(t => t.getTime() === activeTimestamp.getTime());
-                if (idx >= 0) {
-                    setSelectedIndex(idx);
-                    setOffsetX(getOffsetXForIndex(idx));
-                    return;
-                }
+    const solarByDate = useMemo(() => {
+        const map = new Map();
+        timestamps.forEach((ts) => {
+            const { dateKey } = toShenzhenParts(ts);
+            if (!map.has(dateKey)) {
+                map.set(dateKey, getSolarTimes(ts));
             }
-            // 默认定位到最新时间点
-            const maxOffset = Math.max(0, timestamps.length * ITEM_WIDTH - containerWidth);
-            setOffsetX(maxOffset);
-        }
-    }, [timestamps.length, containerWidth]);
+        });
+        return map;
+    }, [timestamps]);
 
-    // 获取容器宽度
     useEffect(() => {
         const updateWidth = () => {
-            if (containerRef.current) {
-                setContainerWidth(containerRef.current.offsetWidth);
+            if (wrapperRef.current) {
+                setContainerWidth(wrapperRef.current.offsetWidth);
             }
         };
-
         updateWidth();
         window.addEventListener('resize', updateWidth);
         return () => window.removeEventListener('resize', updateWidth);
     }, []);
 
-    // 计算最大偏移量
     const getMaxOffsetX = useCallback(() => {
-        const totalWidth = timestamps.length * ITEM_WIDTH;
-        const visibleWidth = containerWidth;
-        return Math.max(0, totalWidth - visibleWidth);
+        return Math.max(0, timestamps.length * ITEM_WIDTH - containerWidth);
     }, [timestamps.length, containerWidth]);
 
-    // 根据索引计算偏移量（使该索引位于中心）
-    const getOffsetXForIndex = useCallback((index) => {
-        const centerX = containerWidth / 2;
-        const itemCenterX = index * ITEM_WIDTH + ITEM_WIDTH / 2;
-        let offset = itemCenterX - centerX;
+    const getOffsetXForIndex = useCallback(
+        (index) => {
+            if (containerWidth <= 0) return 0;
+            const centerX = containerWidth / 2;
+            const itemCenterX = index * ITEM_WIDTH + ITEM_WIDTH / 2;
+            return Math.max(0, Math.min(getMaxOffsetX(), itemCenterX - centerX));
+        },
+        [containerWidth, getMaxOffsetX]
+    );
 
-        // 边界限制
-        const maxOffset = getMaxOffsetX();
-        offset = Math.max(0, Math.min(maxOffset, offset));
+    const getIndexFromOffsetX = useCallback(
+        (offset) => {
+            if (timestamps.length === 0) return 0;
+            const maxOffset = getMaxOffsetX();
+            if (offset <= 0) return 0;
+            if (offset >= maxOffset) return timestamps.length - 1;
+            const centerX = containerWidth / 2;
+            const itemCenterX = centerX + offset;
+            const index = Math.round((itemCenterX - ITEM_WIDTH / 2) / ITEM_WIDTH);
+            return Math.max(0, Math.min(timestamps.length - 1, index));
+        },
+        [containerWidth, timestamps.length, getMaxOffsetX]
+    );
 
-        return offset;
-    }, [containerWidth, getMaxOffsetX]);
-
-    // 根据偏移量计算当前应该选中的索引
-    // 确保边界情况下也能正确选中最左/最右侧的时刻
-    const getIndexFromOffsetX = useCallback((offset) => {
-        const maxOffset = getMaxOffsetX();
-
-        // 左侧边界：offset <= 0 时，选中第一个时间点（最左侧）
-        if (offset <= 0) {
-            return 0;
-        }
-
-        // 右侧边界：offset >= maxOffset 时，选中最后一个时间点（最右侧）
-        if (offset >= maxOffset) {
-            return timestamps.length - 1;
-        }
-
-        // 中间区域：正常计算中心索引
-        const centerX = containerWidth / 2;
-        const itemCenterX = centerX + offset;
-        const index = Math.round((itemCenterX - ITEM_WIDTH / 2) / ITEM_WIDTH);
-        return Math.max(0, Math.min(timestamps.length - 1, index));
-    }, [containerWidth, timestamps.length, getMaxOffsetX]);
-
-    // 选中时间点
-    const selectTimestamp = useCallback((index, animate = true) => {
-        if (index < 0 || index >= timestamps.length) return;
-
-        setSelectedIndex(index);
-
-        // 计算偏移量并平滑滚动
-        const targetOffset = getOffsetXForIndex(index);
-        setOffsetX(targetOffset);
-
-        // 触发视频播放
-        const timestamp = timestamps[index];
-        if (timestamp) {
-            onSelectTimestamp(timestamp);
-        }
-    }, [timestamps, onSelectTimestamp, getOffsetXForIndex]);
-
-    // 点击时刻处理
-    const handleItemClick = useCallback((index) => {
-        if (index < 0 || index >= timestamps.length) return;
-
-        setSelectedIndex(index);
-        const targetOffset = getOffsetXForIndex(index);
-        setOffsetX(targetOffset);
-
-        const timestamp = timestamps[index];
-        if (timestamp) {
-            onSelectTimestamp(timestamp);
-        }
-    }, [timestamps, onSelectTimestamp, getOffsetXForIndex]);
-
-    // 处理触摸开始
-    const handleTouchStart = (e) => {
-        setIsDragging(true);
-        startX.current = e.touches[0].clientX;
-        baseOffsetX.current = offsetX;
-
-        // 停止任何进行中的动画
-        if (animationRef.current) {
-            cancelAnimationFrame(animationRef.current);
-        }
-    };
-
-    // 处理触摸移动
-    const handleTouchMove = (e) => {
-        if (!isDragging) return;
-
-        const deltaX = startX.current - e.touches[0].clientX;
-        let newOffset = baseOffsetX.current + deltaX;
-
-        // 边界限制（弹性效果）
-        const maxOffset = getMaxOffsetX();
-        if (newOffset < 0) {
-            newOffset = newOffset * 0.3; // 弹性效果
-        } else if (newOffset > maxOffset) {
-            newOffset = maxOffset + (newOffset - maxOffset) * 0.3;
-        }
-
-        setOffsetX(newOffset);
-    };
-
-    // 处理触摸结束
-    const handleTouchEnd = () => {
-        setIsDragging(false);
-
-        // 计算中心索引并选中
-        const centerIndex = getIndexFromOffsetX(offsetX);
-        selectTimestamp(centerIndex, true);
-    };
-
-    // 处理鼠标事件（桌面端测试）
-    const handleMouseDown = (e) => {
-        setIsDragging(true);
-        startX.current = e.clientX;
-        baseOffsetX.current = offsetX;
-
-        if (animationRef.current) {
-            cancelAnimationFrame(animationRef.current);
-        }
-    };
-
-    const handleMouseMove = (e) => {
-        if (!isDragging) return;
-
-        const deltaX = startX.current - e.clientX;
-        let newOffset = baseOffsetX.current + deltaX;
-
-        const maxOffset = getMaxOffsetX();
-        if (newOffset < 0) {
-            newOffset = newOffset * 0.3;
-        } else if (newOffset > maxOffset) {
-            newOffset = maxOffset + (newOffset - maxOffset) * 0.3;
-        }
-
-        setOffsetX(newOffset);
-    };
-
-    const handleMouseUp = () => {
-        if (!isDragging) return;
-        setIsDragging(false);
-
-        const centerIndex = getIndexFromOffsetX(offsetX);
-        selectTimestamp(centerIndex, true);
-    };
-
-    const handleMouseLeave = () => {
-        if (isDragging) {
-            handleMouseUp();
-        }
-    };
-
-    const handleLiveClick = () => {
-        setSelectedIndex(-1);
-        setOffsetX(getOffsetXForIndex(timestamps.length - 1)); // 重置到最新
-        onBackToLive();
-    };
-
-    const handleSpecialMomentClick = (type) => {
-        const { sunrise, sunset } = getSunriseAndSunset(new Date());
-        const target = type === 'sunrise' ? sunrise : sunset;
-        let closestIndex = 0;
+    const selectedIndex = useMemo(() => {
+        if (timestamps.length === 0) return -1;
+        if (isLive || !activeTimestamp) return timestamps.length - 1;
+        const targetKey = formatVideoTimestamp(activeTimestamp);
+        const exact = timestamps.findIndex((t) => formatVideoTimestamp(t) === targetKey);
+        if (exact >= 0) return exact;
+        let closest = timestamps.length - 1;
         let minDiff = Infinity;
-        timestamps.forEach((t, i) => {
-            const diff = Math.abs(t.getTime() - target.getTime());
+        timestamps.forEach((t, idx) => {
+            const diff = Math.abs(t.getTime() - activeTimestamp.getTime());
             if (diff < minDiff) {
                 minDiff = diff;
-                closestIndex = i;
+                closest = idx;
             }
         });
-        selectTimestamp(closestIndex);
-    };
+        return closest;
+    }, [timestamps, isLive, activeTimestamp]);
 
-    const getDisplayLabel = (index) => {
-        // 直播状态显示当前时间
-        if (index < 0) {
-            const now = new Date();
-            return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-        }
+    const settledOffsetX = selectedIndex >= 0 ? getOffsetXForIndex(selectedIndex) : 0;
+    const displayOffsetX = isDragging ? dragOffsetX : settledOffsetX;
 
-        const time = timestamps[index];
-        if (!time) return '';
-
-        const now = new Date();
-        const yesterday = new Date(now);
-        yesterday.setDate(yesterday.getDate() - 1);
-
-        const hours = String(time.getHours()).padStart(2, '0');
-        const minutes = String(time.getMinutes()).padStart(2, '0');
-        const timeStr = `${hours}:${minutes}`;
-
-        if (time.toDateString() === now.toDateString()) {
-            return timeStr;
-        } else if (time.toDateString() === yesterday.toDateString()) {
-            return `昨天 ${timeStr}`;
+    const commitSelection = (index) => {
+        const ts = timestamps[index];
+        if (!ts) return;
+        if (index === timestamps.length - 1) {
+            onBackToLive();
         } else {
-            return `${time.getMonth() + 1}/${time.getDate()} ${timeStr}`;
+            onSelectTimestamp(ts);
         }
     };
 
-    const centerIndex = getIndexFromOffsetX(offsetX);
+    const handlePointerDown = (e) => {
+        if (e.button !== 0 && e.pointerType === 'mouse') return;
+        setIsDragging(true);
+        didDragRef.current = false;
+        startXRef.current = e.clientX;
+        baseOffsetRef.current = settledOffsetX;
+        setDragOffsetX(settledOffsetX);
+    };
+
+    const handlePointerMove = (e) => {
+        if (!isDragging) return;
+        const deltaX = startXRef.current - e.clientX;
+        if (Math.abs(deltaX) > 4) didDragRef.current = true;
+
+        let next = baseOffsetRef.current + deltaX;
+        const maxOffset = getMaxOffsetX();
+        if (next < 0) next = next * 0.3;
+        else if (next > maxOffset) next = maxOffset + (next - maxOffset) * 0.3;
+        setDragOffsetX(next);
+    };
+
+    const handlePointerUp = () => {
+        if (!isDragging) return;
+        setIsDragging(false);
+        if (didDragRef.current) {
+            const centerIdx = getIndexFromOffsetX(dragOffsetX);
+            commitSelection(centerIdx);
+        }
+    };
+
+    const jumpToSpecial = (type) => {
+        if (timestamps.length === 0) return;
+        const { sunrise, sunset } = getSolarTimes(new Date(initialNowMs));
+        let target = type === 'sunrise' ? sunrise : sunset;
+        if (target.getTime() > timestamps[timestamps.length - 1].getTime()) {
+            const prevDay = new Date(target.getTime() - 24 * 60 * 60 * 1000);
+            const prevSolar = getSolarTimes(prevDay);
+            target = type === 'sunrise' ? prevSolar.sunrise : prevSolar.sunset;
+        }
+        const startOffset = target.getTime() - 20 * 60 * 1000;
+        let closest = 0;
+        let minDiff = Infinity;
+        timestamps.forEach((t, i) => {
+            const diff = Math.abs(t.getTime() - startOffset);
+            if (diff < minDiff) {
+                minDiff = diff;
+                closest = i;
+            }
+        });
+        onSelectTimestamp(timestamps[closest]);
+    };
+
+    const jumpPast3Hours = () => {
+        if (timestamps.length === 0) return;
+        const target = timestamps[timestamps.length - 1].getTime() - 3 * 60 * 60 * 1000;
+        let closest = 0;
+        let minDiff = Infinity;
+        timestamps.forEach((t, i) => {
+            const diff = Math.abs(t.getTime() - target);
+            if (diff < minDiff) {
+                minDiff = diff;
+                closest = i;
+            }
+        });
+        onSelectTimestamp(timestamps[closest]);
+    };
+
+    const currentLabel = activeTimestamp
+        ? formatRelativeTimestamp(activeTimestamp)
+        : timestamps.length > 0
+            ? formatRelativeTimestamp(timestamps[timestamps.length - 1])
+            : '--:--';
 
     return (
-        <div className="timeline-container">
+        <section className="timeline-card" aria-label="24小时天色回放时间轴">
             <div className="timeline-header">
-                <span className="timeline-current">{getDisplayLabel(selectedIndex)}</span>
-                <span
-                    className={`timeline-return-live ${selectedIndex >= 0 ? 'active' : ''}`}
-                    onClick={handleLiveClick}
-                >
-                    {SUNRISE_CAMERAS.includes(cameraId) && <span style={{ marginRight: 4, cursor: 'pointer' }} onClick={(e) => { e.stopPropagation(); handleSpecialMomentClick('sunrise'); }}>🌅</span>}
-                    {SUNSET_CAMERAS.includes(cameraId) && <span style={{ marginRight: 4, cursor: 'pointer' }} onClick={(e) => { e.stopPropagation(); handleSpecialMomentClick('sunset'); }}>🌄</span>}
-                    返回直播
-                </span>
+                <div className="timeline-time-readout">
+                    <span className="timeline-current">{currentLabel}</span>
+                    <span className="timeline-sub-hint">
+                        {isLive ? '当前为最新实时分片' : '按时间正序自动连播'}
+                    </span>
+                </div>
+
+                <div className="timeline-quick-actions">
+                    {SUNRISE_CAMERAS.includes(cameraId) && (
+                        <button
+                            type="button"
+                            className="timeline-chip-btn"
+                            onClick={() => jumpToSpecial('sunrise')}
+                            title="从最近一次日出前 20 分钟开始连播"
+                        >
+                            🌅 日出连播
+                        </button>
+                    )}
+                    {SUNSET_CAMERAS.includes(cameraId) && (
+                        <button
+                            type="button"
+                            className="timeline-chip-btn"
+                            onClick={() => jumpToSpecial('sunset')}
+                            title="从最近一次日落前 20 分钟开始连播"
+                        >
+                            🌄 日落连播
+                        </button>
+                    )}
+                    <button
+                        type="button"
+                        className="timeline-chip-btn"
+                        onClick={jumpPast3Hours}
+                        title="回看过去 3 小时天气变化"
+                    >
+                        ▶ 过去3小时
+                    </button>
+                    <button
+                        type="button"
+                        className={`timeline-chip-btn live-return ${isLive ? 'active' : ''}`}
+                        onClick={onBackToLive}
+                    >
+                        {isLive ? '● 实时观测中' : '↺ 返回实时'}
+                    </button>
+                </div>
             </div>
 
-            {/* 滚轮选择器 */}
-            <div className="timeline-wheel-wrapper">
-                {/* 中央指示线 */}
-                <div className="wheel-center-indicator" />
-
-                {/* 可滚动的尺子 */}
+            <div className="timeline-wheel-wrapper" ref={wrapperRef}>
+                <div className="wheel-center-indicator" aria-hidden="true" />
                 <div
                     className={`timeline-wheel-strip ${isDragging ? 'dragging' : ''}`}
-                    style={{ transform: `translateX(-${offsetX}px)` }}
-                    ref={containerRef}
-                    onTouchStart={handleTouchStart}
-                    onTouchMove={handleTouchMove}
-                    onTouchEnd={handleTouchEnd}
-                    onMouseDown={handleMouseDown}
-                    onMouseMove={handleMouseMove}
-                    onMouseUp={handleMouseUp}
-                    onMouseLeave={handleMouseLeave}
+                    style={{ transform: `translateX(-${displayOffsetX}px)` }}
+                    onPointerDown={handlePointerDown}
+                    onPointerMove={handlePointerMove}
+                    onPointerUp={handlePointerUp}
+                    onPointerCancel={handlePointerUp}
+                    onPointerLeave={handlePointerUp}
                 >
-                    {timestamps.map((timestamp, index) => {
-                        const specialMoment = getSpecialMoment(timestamp, cameraId);
-                        const showTimeLabel = shouldShowTimeLabel(index);
+                    {timestamps.map((ts, index) => {
+                        const compactKey = formatVideoTimestamp(ts);
+                        const { dateKey } = toShenzhenParts(ts);
+                        const solar = solarByDate.get(dateKey) || getSolarTimes(ts);
+                        const bandColor = getSkyBandColor(ts, solar);
+                        const specialMoment = getSpecialMoment(ts, cameraId);
+                        const showTime = shouldShowTimeLabel(index);
+                        const isSelected = index === selectedIndex;
+
+                        let availStatus = 'unknown';
+                        if (availableKeys && availableKeys.size > 0) {
+                            availStatus = availableKeys.has(compactKey) ? 'available' : 'missing';
+                        }
+
                         return (
-                        <div
-                            key={timestamp.getTime()}
-                            className={`wheel-item ${selectedIndex === index || (selectedIndex === -1 && index === timestamps.length - 1) ? 'selected' : ''} ${centerIndex === index ? 'center' : ''} ${index > timestamps.length - 1 ? 'future' : ''}`}
-                            style={{ width: ITEM_WIDTH, flexShrink: 0 }}
-                            onClick={() => handleItemClick(index)}
-                        >
-                            {specialMoment ? (
-                                <span className="wheel-item-special">{specialMoment === 'sunrise' ? '🌅' : '🌄'}</span>
-                            ) : showTimeLabel ? (
-                                <span className="wheel-item-time">
-                                    {formatDisplayTime(timestamp)}
+                            <button
+                                key={compactKey}
+                                type="button"
+                                className={`wheel-item ${isSelected ? 'selected' : ''}`}
+                                style={{ inlineSize: ITEM_WIDTH }}
+                                aria-label={`${formatRelativeTimestamp(ts)}${specialMoment === 'sunrise' ? ' 日出时段' : specialMoment === 'sunset' ? ' 日落时段' : ''}`}
+                                aria-pressed={isSelected}
+                                onClick={() => {
+                                    if (!didDragRef.current) {
+                                        commitSelection(index);
+                                    }
+                                }}
+                            >
+                                <span
+                                    className="wheel-sky-band"
+                                    style={{ backgroundColor: bandColor }}
+                                    aria-hidden="true"
+                                />
+                                <span className="wheel-item-label-slot">
+                                    {specialMoment ? (
+                                        <span className="wheel-item-special" aria-hidden="true">
+                                            {specialMoment === 'sunrise' ? '🌅' : '🌄'}
+                                        </span>
+                                    ) : showTime ? (
+                                        <span className="wheel-item-time">{formatDisplayTime(ts)}</span>
+                                    ) : (
+                                        <span className="wheel-item-dot" aria-hidden="true" />
+                                    )}
                                 </span>
-                            ) : (
-                                <span className="wheel-item-dot" />
-                            )}
-                        </div>
+                                <span
+                                    className="wheel-item-avail"
+                                    data-status={availStatus}
+                                    aria-hidden="true"
+                                />
+                            </button>
                         );
                     })}
                 </div>
             </div>
-        </div>
+
+            <div className="timeline-legend">
+                <div className="legend-items">
+                    <span className="legend-item">
+                        <span className="legend-swatch available" aria-hidden="true" />
+                        <span>已探测分片</span>
+                    </span>
+                    <span className="legend-item">
+                        <span className="legend-swatch missing" aria-hidden="true" />
+                        <span>暂缺分片</span>
+                    </span>
+                </div>
+                <span className="timeline-legend-hint">拖动或点按时刻跳转 · 顶部色条表示昼夜天色</span>
+            </div>
+        </section>
     );
 }
