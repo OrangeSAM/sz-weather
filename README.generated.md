@@ -1,10 +1,10 @@
 # 深圳天气实景监测
 
-Real-time weather camera monitoring for Shenzhen, displaying live video feeds from 13 weather stations across the city.
+Real-time weather camera monitoring for Shenzhen, displaying live video feeds from 14 weather stations across the city.
 
 ## Features
 
-- **13 Weather Cameras** - Watch live conditions across Shenzhen including Futian, Luohu, Shekou, Xichong, and more
+- **14 Weather Cameras** - Watch live conditions across Shenzhen including Futian, Luohu, Shekou, Airport Terminal, Xichong, and more
 - **24-Hour Playback** - Browse historical footage from the past 24 hours via an interactive timeline
 - **Video Download** - Download current or historical video clips directly
 - **PWA Support** - Install as a desktop or mobile app for quick access

@@ -3,7 +3,7 @@ import "./globals.css";
 
 export const metadata = {
   title: "深圳天气实景监测",
-  description: "实时查看深圳市气象局13个监控点位的天气画面",
+  description: "实时查看深圳市气象局14个监控点位的天气画面",
   manifest: "/manifest.json",
 };
 
