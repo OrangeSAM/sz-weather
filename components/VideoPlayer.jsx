@@ -22,9 +22,12 @@ export default function VideoPlayer({ currentCameraIndex, onTimeUpdate, onTimest
     const retryCountRef = useRef(0);
     const currentUrlRef = useRef(null); // 追踪当前正在加载的 URL
     const isRetryingRef = useRef(false); // 标记是否正在重试
+    const failedLatestTimestampRef = useRef(null); // 记录最近一次加载失败的直播时间戳
+    const failedLatestAtRef = useRef(0); // 记录失败发生时间，避免短时间内重复打断回退播放
     const onTimeUpdateRef = useRef(onTimeUpdate); // 用 ref 保存，避免触发 useEffect
     const onTimestampChangeRef = useRef(onTimestampChange);
-    const MAX_RETRIES = 2;
+    const MAX_RETRIES = 3;
+    const FAILED_TIMESTAMP_COOLDOWN_MS = 180000;
     const selectedTimestampRef = useRef(null); // 记录选中的历史时间
 
     // 保持 ref 最新
@@ -35,23 +38,6 @@ export default function VideoPlayer({ currentCameraIndex, onTimeUpdate, onTimest
     useEffect(() => {
         onTimestampChangeRef.current = onTimestampChange;
     }, [onTimestampChange]);
-
-    // 切换到历史模式 / 返回直播
-    useEffect(() => {
-        if (selectedTimestamp) {
-            selectedTimestampRef.current = selectedTimestamp;
-            setIsPlayingHistory(true);
-            retryCountRef.current = 0;
-            loadVideo(selectedTimestamp);
-        } else if (selectedTimestamp === null && isPlayingHistory) {
-            selectedTimestampRef.current = null;
-            setIsPlayingHistory(false);
-            retryCountRef.current = 0;
-            const camera = CAMERAS[currentCameraIndex];
-            const timeSuffix = camera.timeSuffix || 19;
-            loadVideo(getVideoTimestamp(timeSuffix));
-        }
-    }, [selectedTimestamp]);
 
     // 加载视频
     const loadVideo = useCallback((timestamp, isRetry = false) => {
@@ -81,9 +67,30 @@ export default function VideoPlayer({ currentCameraIndex, onTimeUpdate, onTimest
         }
     }, [currentCameraIndex]);
 
+    // 切换到历史模式 / 返回直播
+    useEffect(() => {
+        if (selectedTimestamp) {
+            selectedTimestampRef.current = selectedTimestamp;
+            setIsPlayingHistory(true);
+            retryCountRef.current = 0;
+            loadVideo(selectedTimestamp);
+        } else if (selectedTimestamp === null && isPlayingHistory) {
+            selectedTimestampRef.current = null;
+            setIsPlayingHistory(false);
+            retryCountRef.current = 0;
+            failedLatestTimestampRef.current = null;
+            failedLatestAtRef.current = 0;
+            const camera = CAMERAS[currentCameraIndex];
+            const timeSuffix = camera.timeSuffix || 19;
+            loadVideo(getVideoTimestamp(timeSuffix));
+        }
+    }, [selectedTimestamp]);
+
     // 初始化或切换摄像头时加载视频
     useEffect(() => {
         retryCountRef.current = 0;
+        failedLatestTimestampRef.current = null;
+        failedLatestAtRef.current = 0;
         const camera = CAMERAS[currentCameraIndex];
         const timeSuffix = camera.timeSuffix || 19;
         const timestamp = initialTimestamp || getVideoTimestamp(timeSuffix);
@@ -106,8 +113,11 @@ export default function VideoPlayer({ currentCameraIndex, onTimeUpdate, onTimest
             const camera = CAMERAS[currentCameraIndex];
             const timeSuffix = camera.timeSuffix || 19;
             const newTimestamp = getVideoTimestamp(timeSuffix);
+            const isCooldownActive =
+                failedLatestTimestampRef.current === newTimestamp.getTime() &&
+                Date.now() - failedLatestAtRef.current < FAILED_TIMESTAMP_COOLDOWN_MS;
 
-            if (currentVideoTime && newTimestamp.getTime() !== currentVideoTime.getTime()) {
+            if (currentVideoTime && newTimestamp.getTime() > currentVideoTime.getTime() && !isCooldownActive) {
                 console.log('[AutoRefresh] New video available, reloading...');
                 retryCountRef.current = 0;
                 loadVideo(newTimestamp);
@@ -142,12 +152,16 @@ export default function VideoPlayer({ currentCameraIndex, onTimeUpdate, onTimest
         console.error('[Video] Error, retryCount:', retryCountRef.current);
 
         if (retryCountRef.current < MAX_RETRIES) {
-            retryCountRef.current++;
             const camera = CAMERAS[currentCameraIndex];
             const timeSuffix = camera.timeSuffix || 19;
 
             // 如果 currentVideoTime 为空（首次加载失败），重新获取当前时间
             const timestamp = currentVideoTime || getVideoTimestamp(timeSuffix);
+            if (!isPlayingHistory && retryCountRef.current === 0) {
+                failedLatestTimestampRef.current = timestamp.getTime();
+                failedLatestAtRef.current = Date.now();
+            }
+            retryCountRef.current++;
             const prevTimestamp = getPreviousTimestamp(timestamp, timeSuffix);
 
             console.log(`[Video] Retrying with previous timestamp:`, prevTimestamp, 'format:', formatVideoTimestamp(prevTimestamp));
@@ -244,6 +258,8 @@ export default function VideoPlayer({ currentCameraIndex, onTimeUpdate, onTimest
 
     const handleRetry = () => {
         retryCountRef.current = 0;
+        failedLatestTimestampRef.current = null;
+        failedLatestAtRef.current = 0;
         const camera = CAMERAS[currentCameraIndex];
         const timeSuffix = camera.timeSuffix || 19;
         const timestamp = getVideoTimestamp(timeSuffix);
